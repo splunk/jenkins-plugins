@@ -1,0 +1,11 @@
+<l:dependencies xmlns:l='licenses' groupId='com.cloudbees.plugins' artifactId='build-flow-plugin' version='0.18-SNAPSHOT'>
+  <l:dependency name='CloudBees Build Flow plugin' groupId='com.cloudbees.plugins' artifactId='build-flow-plugin' version='0.18-SNAPSHOT' url='https://wiki.jenkins-ci.org/display/JENKINS/Build+Flow+Plugin'>
+    <l:description>Manages job orchestration as a build flow</l:description>
+    <l:license name='MIT' url='http://opensource.org/licenses/MIT' />
+  </l:dependency>
+  <l:dependency name='JGraphT' groupId='org.jgrapht' artifactId='jgrapht-jdk1.5' version='0.7.3' url='http://jgrapht.sourceforge.net'>
+    <l:description>JGraphT is a free Java graph library
+     that provides mathematical graph-theory objects and algorithms</l:description>
+    <l:license name='GNU Lesser General Public License Version 2.1, February 1999' url='http://jgrapht.sourceforge.net/LGPL.html' />
+  </l:dependency>
+</l:dependencies>
