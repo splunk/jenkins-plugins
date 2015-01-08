@@ -37,13 +37,14 @@ THE SOFTWARE.
         <j:forEach var="report" items="${it.childReports}">
           <tr>
             <td class="pane">
-              <a href="${rootURL}/${report.child.url}testReport">${report.child.getBuildVariables().get("aggregate_report_name")}</a>
+            	<j:set var="jvar_reportname" value="${report.child.getBuildVariables().get('aggregate_report_name')}" defaultValue="${report.child.project.name}"/>
+             	<a href="${rootURL}/${report.child.url}testReport">${jvar	_reportname}</a>
             </td>
             <td data="${report.result.duration}" class="pane" style="text-align:right">
               ${report.result.durationString}
             </td>
             <td class="pane" style="text-align:right;">
-              ${report.result.totalCount}
+              ${ report.result.totalCount}
             </td>
             <td class="pane" style="text-align:right;">
               <!-- if only we have if..then..else in Jelly -->
@@ -68,8 +69,9 @@ THE SOFTWARE.
         <j:if test="${report.result.failCount!=0}">
 
           <h3>
+            <j:set var="jvar_reportname" value="${report.child.getBuildVariables().get('aggregate_report_name')}" defaultValue="${report.child.project.name}"/>
             <a name="${report.child.project.name}"/>
-            <a href="${rootURL}/${report.child.url}testReport">${report.child.getBuildVariables().get("aggregate_report_name")}</a>
+            <a href="${rootURL}/${report.child.url}testReport">${jvar_reportname}</a>
           </h3>
 
           <table class="pane sortable">
