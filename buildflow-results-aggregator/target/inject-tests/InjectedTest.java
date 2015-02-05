@@ -7,10 +7,10 @@ import java.util.*;
 public class InjectedTest extends junit.framework.TestCase {
   public static junit.framework.Test suite() throws Exception {
     Map parameters = new HashMap();
-    parameters.put("basedir","/Users/araza/Desktop/new-plugins/bf2");
+    parameters.put("basedir","/Users/yifengmao/Project/jenkins-plugins/buildflow-results-aggregator");
     parameters.put("artifactId","build-flow-test-aggregator");
-    parameters.put("outputDirectory","/Users/araza/Desktop/new-plugins/bf2/target/classes");
-    parameters.put("testOutputDirectory","/Users/araza/Desktop/new-plugins/bf2/target/test-classes");
+    parameters.put("outputDirectory","/Users/yifengmao/Project/jenkins-plugins/buildflow-results-aggregator/target/classes");
+    parameters.put("testOutputDirectory","/Users/yifengmao/Project/jenkins-plugins/buildflow-results-aggregator/target/test-classes");
     parameters.put("requirePI","false");
     return new org.jvnet.hudson.test.PluginAutomaticTestBuilder().build(parameters);
   }

@@ -38,7 +38,7 @@ THE SOFTWARE.
           <tr>
             <td class="pane">
             	<j:set var="jvar_reportname" value="${report.child.getBuildVariables().get('aggregate_report_name')}" defaultValue="${report.child.project.name}"/>
-             	<a href="${rootURL}/${report.child.url}testReport">${jvar	_reportname}</a>
+             	<a href="${rootURL}/${report.child.url}testReport">${jvar_reportname}</a>
             </td>
             <td data="${report.result.duration}" class="pane" style="text-align:right">
               ${report.result.durationString}
