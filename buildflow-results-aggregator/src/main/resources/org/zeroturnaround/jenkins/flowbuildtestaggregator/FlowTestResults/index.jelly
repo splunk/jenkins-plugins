@@ -23,6 +23,24 @@ THE SOFTWARE.
     <st:include page="sidepanel.jelly" it="${it.owner}"/>
     <l:main-panel>
       <h1>Aggregated Test Results</h1>
+      <br/>
+      <h3>Passed Jobs:${it.successJobsNumber} Failed Jobs:${it.failedJobsNumber} Aborted Jobs:${it.abortedJobsNumber}</h3>
+	  
+      <h2>Aborted Jobs</h2>
+      <table class="pane sortable">
+        <tr>
+          <td class="pane-header">Job Name</td>
+        </tr>
+	  <j:forEach var="job" items="${it.abortedjobs}">
+	    <tr>
+	    	<td class="pane">
+				<a href="${rootURL}/${job.url}">${job.name}</a>
+			</td>
+		</tr>
+      </j:forEach>
+      </table>
+      
+      <h2>Case Summary</h2>
       <test:bar/>
 
       <table class="pane sortable">
@@ -44,7 +62,7 @@ THE SOFTWARE.
               ${report.result.durationString}
             </td>
             <td class="pane" style="text-align:right;">
-              ${ report.result.totalCount}
+              ${report.result.totalCount}
             </td>
             <td class="pane" style="text-align:right;">
               <!-- if only we have if..then..else in Jelly -->
@@ -52,7 +70,6 @@ THE SOFTWARE.
                 <a href="#${report.child.project.name}">${report.result.failCount}</a>
               </j:if>
               <j:if test="${report.result.failCount==0}">0</j:if>
-
 
             </td>
             <td class="pane" style="text-align:right;">
