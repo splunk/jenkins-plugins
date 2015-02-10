@@ -69,8 +69,15 @@ public class FlowTestAggregator extends Recorder {
 					continue;
 				}
 				// if you can reach here, then you are an aborted build
-				testResults.abortedjobs.add(new AbortedJob(jobInvocation
-						.getName(), jobInvocation.getBuild().getUrl()));
+				String name = null;
+				try {
+					name = ((AbstractBuild<?, ?>) jobInvocation.getBuild())
+							.getBuildVariables().get("aggregate_report_name");
+				} catch (Exception e) {
+				}
+				testResults.abortedjobs.add(new AbortedJob(name == null
+						|| name.equals("") ? jobInvocation.getName() : name,
+						jobInvocation.getBuild().getUrl()));
 				// }
 			}
 		} catch (ExecutionException e) {
