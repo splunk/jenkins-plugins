@@ -32,11 +32,14 @@ import hudson.security.ACL
 import hudson.slaves.EnvironmentVariablesNodeProperty
 import hudson.slaves.NodeProperty
 import hudson.util.spring.ClosureScript
+import hudson.tasks.test.AbstractTestResultAction
 import jenkins.model.Jenkins
 
 import org.acegisecurity.context.SecurityContextHolder
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+
+import com.thoughtworks.xstream.alias.ClassMapper.Null;
 
 import java.util.concurrent.*
 import java.util.logging.Logger
@@ -391,6 +394,34 @@ public class FlowDelegate {
         }
     }
 
+	def retry_if_no_test_result(int attempts, retryClosure) {
+		statusCheck()
+		Result origin = flowRun.state.result
+		int i = 0;
+		while( attempts-- > 0) {
+			// Restore the pre-retry result state to ignore failures
+			flowRun.state.result = origin
+			
+			i++;
+			println("retry (attempt $i) {")
+			++indent
+			
+			JobInvocation job = null;
+
+			job = retryClosure()
+
+			--indent
+			
+			AbstractTestResultAction testResult = job == null?null:job.getBuild().getAction(AbstractTestResultAction.class);
+			if (job ==null || (job!=null && testResult !=null)) {
+				println("}")
+				return;
+			}
+
+			println("} // failed")
+		}
+	}
+	
     // allows syntax like : parallel(["Kohsuke","Nicolas"].collect { name -> return { build("job1", param1:name) } })
     def List<FlowState> parallel(Collection<? extends Closure> closures) {
         parallel(closures as Closure[])

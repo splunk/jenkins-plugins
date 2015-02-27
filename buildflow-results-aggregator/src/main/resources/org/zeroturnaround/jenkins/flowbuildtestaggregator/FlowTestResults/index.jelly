@@ -24,9 +24,9 @@ THE SOFTWARE.
     <l:main-panel>
       <h1>Aggregated Test Results</h1>
       <br/>
-      <h3>Passed Jobs:${it.successJobsNumber} Failed Jobs:${it.failedJobsNumber} Aborted Jobs:${it.abortedJobsNumber}</h3>
+      <h3>Passed Jobs:${it.successJobsNumber} Failed Jobs:${it.failedJobsNumber} NoResults Jobs:${it.abortedJobsNumber}</h3>
 	  
-      <h2>Aborted Jobs</h2>
+      <h2>NoResults Jobs</h2>
       <table class="pane sortable">
         <tr>
           <td class="pane-header">Job Name</td>
