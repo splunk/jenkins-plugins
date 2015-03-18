@@ -39,8 +39,6 @@ import org.acegisecurity.context.SecurityContextHolder
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
-import com.thoughtworks.xstream.alias.ClassMapper.Null;
-
 import java.util.concurrent.*
 import java.util.logging.Logger
 
@@ -398,27 +396,29 @@ public class FlowDelegate {
 		statusCheck()
 		Result origin = flowRun.state.result
 		int i = 0;
+		String name
 		while( attempts-- > 0) {
 			// Restore the pre-retry result state to ignore failures
 			flowRun.state.result = origin
 			
 			i++;
-			println("retry (attempt $i) {")
-			++indent
 			
 			JobInvocation job = null;
 
 			job = retryClosure()
-
-			--indent
 			
 			AbstractTestResultAction testResult = job == null?null:job.getBuild().getAction(AbstractTestResultAction.class);
 			if (job ==null || (job!=null && testResult !=null)) {
-				println("}")
 				return;
 			}
 
-			println("} // failed")
+			name = job.getName() + " - " + ((AbstractBuild<?, ?>) job.getBuild())
+							.getBuildVariables().get("aggregate_report_name");
+
+			if (attempts != 0)
+				println(HyperlinkNote.encodeTo('/'+ job.getBuild().getUrl(), name) + " did not have any test results. Possible abort or infrastructure issues. Retry #" + i)
+			else
+				println(HyperlinkNote.encodeTo('/'+ job.getBuild().getUrl(), name) + " did not have any test results. Possible abort or infrastructure issues. Abort..")
 		}
 	}
 	
