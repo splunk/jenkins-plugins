@@ -27,7 +27,8 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.480</version>
+    <!--  <version>1.480</version>-->
+    <version>1.532.1</version>
   </parent>
 
   <groupId>com.cloudbees.plugins</groupId>

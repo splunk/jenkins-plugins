@@ -35,6 +35,7 @@ import hudson.model.Run;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -51,204 +52,236 @@ import org.kohsuke.stapler.StaplerResponse;
 
 /**
  * Maintain the state of execution of a build flow as a chain of triggered jobs
- *
+ * 
  * @author <a href="mailto:nicolas.deloof@cloudbees.com">Nicolas De loof</a>
  */
 public class FlowRun extends Build<BuildFlow, FlowRun> {
 
-    private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
-    
-    private String dsl;
-    private String dslFile;
+	private static final Logger LOGGER = Logger.getLogger(FlowRun.class
+			.getName());
 
-    private boolean buildNeedsWorkspace;
+	private String dsl;
+	private String dslFile;
 
-    private JobInvocation.Start startJob;
+	private boolean buildNeedsWorkspace;
 
-    private DirectedGraph<JobInvocation, JobEdge> jobsGraph;
+	private JobInvocation.Start startJob;
 
-    private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
-    
-    private transient AtomicInteger buildIndex = new AtomicInteger(1);
+	private DirectedGraph<JobInvocation, JobEdge> jobsGraph;
 
-    public FlowRun(BuildFlow job, File buildDir) throws IOException {
-        super(job, buildDir);
-        setup(job);
-    }
+	private transient ThreadLocal<FlowState> state = new ThreadLocal<FlowState>();
 
-    public FlowRun(BuildFlow job) throws IOException {
-        super(job);
-        setup(job);
-    }
+	private transient AtomicInteger buildIndex = new AtomicInteger(1);
 
-    private void setup(BuildFlow job) {
-        if (jobsGraph == null) {
-            jobsGraph = new SimpleDirectedGraph<JobInvocation, JobEdge>(JobEdge.class);
-        }
-        if (startJob == null) {
-            startJob = new JobInvocation.Start(this);
-        }
-        this.dsl = job.getDsl();
-        this.dslFile = job.getDslFile();
-        this.buildNeedsWorkspace = job.getBuildNeedsWorkspace();
-        startJob.buildStarted(this);
-        jobsGraph.addVertex(startJob);
-        state.set(new FlowState(SUCCESS, startJob));
-    }
+	public FlowRun(BuildFlow job, File buildDir) throws IOException {
+		super(job, buildDir);
+		setup(job);
+	}
 
-    /* package */ void schedule(JobInvocation job, List<Action> actions) throws ExecutionException, InterruptedException {
-        addBuild(job);
-        job.run(new FlowCause(this, job), actions);
-    }
+	public FlowRun(BuildFlow job) throws IOException {
+		super(job);
+		setup(job);
+	}
 
-    /* package */ Run waitForCompletion(JobInvocation job) throws ExecutionException, InterruptedException {
-        job.waitForCompletion();
-        getState().setResult(job.getResult());
-        return job.getBuild();
-    }
+	private void setup(BuildFlow job) {
+		if (jobsGraph == null) {
+			jobsGraph = new SimpleDirectedGraph<JobInvocation, JobEdge>(
+					JobEdge.class);
+		}
+		if (startJob == null) {
+			startJob = new JobInvocation.Start(this);
+		}
+		this.dsl = job.getDsl();
+		this.dslFile = job.getDslFile();
+		this.buildNeedsWorkspace = job.getBuildNeedsWorkspace();
+		startJob.buildStarted(this);
+		jobsGraph.addVertex(startJob);
+		state.set(new FlowState(SUCCESS, startJob));
+	}
 
-    /* package */ Run waitForFinalization(JobInvocation job) throws ExecutionException, InterruptedException {
-        job.waitForFinalization();
-        getState().setResult(job.getResult());
-        return job.getBuild();
-    }
+	/* package */void schedule(JobInvocation job, List<Action> actions)
+			throws ExecutionException, InterruptedException {
+		addBuild(job);
+		job.run(new FlowCause(this, job), actions);
+	}
 
-    /* package */ FlowState getState() {
-        return state.get();
-    }
+	/* package */Run waitForCompletion(JobInvocation job)
+			throws ExecutionException, InterruptedException {
+		job.waitForCompletion();
+		getState().setResult(job.getResult());
+		return job.getBuild();
+	}
 
-    /* package */ void setState(FlowState s) {
-        state.set(s);
-    }
+	/* package */Run waitForFinalization(JobInvocation job)
+			throws ExecutionException, InterruptedException {
+		job.waitForFinalization();
+		getState().setResult(job.getResult());
+		return job.getBuild();
+	}
 
-    public DirectedGraph<JobInvocation, JobEdge> getJobsGraph() {
-        return jobsGraph;
-    }
+	/* package */FlowState getState() {
+		return state.get();
+	}
 
-    public JobInvocation getStartJob() {
-        return startJob;
-    }
+	/* package */void setState(FlowState s) {
+		state.set(s);
+	}
 
-    public BuildFlow getBuildFlow() {
-        return project;
-    }
+	public DirectedGraph<JobInvocation, JobEdge> getJobsGraph() {
+		return jobsGraph;
+	}
 
-    public void doGetDot(StaplerRequest req, StaplerResponse rsp) throws IOException {
-        new DOTExporter().export(rsp.getWriter(), jobsGraph);
-    }
+	public JobInvocation getStartJob() {
+		return startJob;
+	}
 
-    public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
-        jobsGraph.addVertex(job);
-        for (JobInvocation up : state.get().getLastCompleted()) {
-            String edge = up.getId() + " => " + job.getId();
-            LOGGER.fine("added build to execution graph " + edge);
-            jobsGraph.addEdge(up, job, new JobEdge(up, job));
-        }
-        state.get().setLastCompleted(job);
-    }
+	public BuildFlow getBuildFlow() {
+		return project;
+	}
 
-    @Override
-    public void run() {
-        if (buildNeedsWorkspace) {
-            run(new BuildWithWorkspaceRunnerImpl(dsl, dslFile));
-        } else {
-            execute(new FlyweightTaskRunnerImpl(dsl));
-        }
-    }
+	public void doGetDot(StaplerRequest req, StaplerResponse rsp)
+			throws IOException {
+		new DOTExporter().export(rsp.getWriter(), jobsGraph);
+	}
 
-    protected class BuildWithWorkspaceRunnerImpl extends AbstractRunner {
+	public synchronized void addBuild(JobInvocation job)
+			throws ExecutionException, InterruptedException {
+		jobsGraph.addVertex(job);
+		for (JobInvocation up : state.get().getLastCompleted()) {
+			String edge = up.getId() + " => " + job.getId();
+			LOGGER.fine("added build to execution graph " + edge);
+			jobsGraph.addEdge(up, job, new JobEdge(up, job));
+		}
+		state.get().setLastCompleted(job);
+	}
 
-        private final String dsl;
-        private final String dslFile;
+	@Override
+	public void run() {
+		if (buildNeedsWorkspace) {
+			run(new BuildWithWorkspaceRunnerImpl(dsl, dslFile));
+		} else {
+			execute(new FlyweightTaskRunnerImpl(dsl));
+		}
+	}
 
-        public BuildWithWorkspaceRunnerImpl(String dsl, String dslFile) {
-            this.dsl = dsl;
-            this.dslFile = dslFile;
-        }
+	protected class BuildWithWorkspaceRunnerImpl extends AbstractRunner {
 
-        protected Result doRun(BuildListener listener) throws Exception {
-            if(!preBuild(listener, project.getPublishersList()))
-                return FAILURE;
+		private final String dsl;
+		private final String dslFile;
 
-            try {
-                setResult(SUCCESS);
-                if (dslFile != null) {
-                    listener.getLogger().printf("[build-flow] reading DSL from file '%s'\n", dslFile);
-                    String fileContent = getWorkspace().child(dslFile).readToString();
-                    new FlowDSL().executeFlowScript(FlowRun.this, fileContent, listener);
-                } else {
-                    new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
-                }
-            } finally {
-                boolean failed=false;
-                for( int i=buildEnvironments.size()-1; i>=0; i-- ) {
-                    if (!buildEnvironments.get(i).tearDown(FlowRun.this,listener)) {
-                        failed=true;
-                    }
-                }
-                if (failed) return Result.FAILURE;
-            }
-            return getState().getResult();
-        }
+		public BuildWithWorkspaceRunnerImpl(String dsl, String dslFile) {
+			this.dsl = dsl;
+			this.dslFile = dslFile;
+		}
 
-        @Override
-        public void post2(BuildListener listener) throws IOException, InterruptedException {
-            if(!performAllBuildSteps(listener, project.getPublishersList(), true))
-                setResult(FAILURE);
-        }
+		protected Result doRun(BuildListener listener) throws Exception {
+			if (!preBuild(listener, project.getPublishersList()))
+				return FAILURE;
 
-        @Override
-        public void cleanUp(BuildListener listener) throws Exception {
-            performAllBuildSteps(listener, project.getPublishersList(), false);
-            FlowRun.this.startJob.buildCompleted();
-            super.cleanUp(listener);
-        }
-    }
+			try {
+				setResult(SUCCESS);
+				if (dslFile != null) {
+					listener.getLogger().printf(
+							"[build-flow] reading DSL from file '%s'\n",
+							dslFile);
+					String fileContent = getWorkspace().child(dslFile)
+							.readToString();
+					new FlowDSL().executeFlowScript(FlowRun.this, fileContent,
+							listener);
+				} else {
+					new FlowDSL()
+							.executeFlowScript(FlowRun.this, dsl, listener);
+				}
+			} finally {
+				boolean failed = false;
+				for (int i = buildEnvironments.size() - 1; i >= 0; i--) {
+					if (!buildEnvironments.get(i).tearDown(FlowRun.this,
+							listener)) {
+						failed = true;
+					}
+				}
+				if (failed)
+					return Result.FAILURE;
+			}
+			return getState().getResult();
+		}
 
-    protected class FlyweightTaskRunnerImpl extends RunExecution {
+		@Override
+		public void post2(BuildListener listener) throws IOException,
+				InterruptedException {
+			if (!performAllBuildSteps(listener, project.getPublishersList(),
+					true))
+				setResult(FAILURE);
+		}
 
-        private final String dsl;
+		@Override
+		public void cleanUp(BuildListener listener) throws Exception {
+			performAllBuildSteps(listener, project.getPublishersList(), false);
+			FlowRun.this.startJob.buildCompleted();
+			super.cleanUp(listener);
+		}
+	}
 
-        public FlyweightTaskRunnerImpl(String dsl) {
-            this.dsl = dsl;
-        }
+	/*
+	 * EXTENSION the list contains all jobinvocation that build a testing job
+	 * and aborted(does not contain any test results) so jobinvocation in this
+	 * list will not show in 'NoResult jobs' of aggregated test report
+	 */
+	private List<JobInvocation> testBuildRetried = new ArrayList<JobInvocation>();
 
-        @Override
-        public Result run(BuildListener listener) throws Exception, RunnerAbortedException {
-            setResult(SUCCESS);
-            new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
-            return getState().getResult();
-        }
+	public List<JobInvocation> getRetriedjobs() {
+		return testBuildRetried;
+	}
 
-        @Override
-        public void post(BuildListener listener) throws Exception {
-            FlowRun.this.startJob.buildCompleted();
-        }
+	public void addRetriedjob(JobInvocation job) {
+		testBuildRetried.add(job);
+	}
 
-        @Override
-        public void cleanUp(BuildListener listener) throws Exception {
+	protected class FlyweightTaskRunnerImpl extends RunExecution {
 
-        }
-    }
+		private final String dsl;
 
-    public static class JobEdge {
+		public FlyweightTaskRunnerImpl(String dsl) {
+			this.dsl = dsl;
+		}
 
-        private JobInvocation source;
-        private JobInvocation target;
+		@Override
+		public Result run(BuildListener listener) throws Exception,
+				RunnerAbortedException {
+			setResult(SUCCESS);
+			new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
+			return getState().getResult();
+		}
 
-        public JobEdge(JobInvocation source, JobInvocation target) {
-            this.source = source;
-            this.target = target;
-        }
+		@Override
+		public void post(BuildListener listener) throws Exception {
+			FlowRun.this.startJob.buildCompleted();
+		}
 
-        public JobInvocation getSource() {
-            return source;
-        }
+		@Override
+		public void cleanUp(BuildListener listener) throws Exception {
 
-        public JobInvocation getTarget() {
-            return target;
-        }
+		}
+	}
 
-    }
+	public static class JobEdge {
+
+		private JobInvocation source;
+		private JobInvocation target;
+
+		public JobEdge(JobInvocation source, JobInvocation target) {
+			this.source = source;
+			this.target = target;
+		}
+
+		public JobInvocation getSource() {
+			return source;
+		}
+
+		public JobInvocation getTarget() {
+			return target;
+		}
+
+	}
 
 }

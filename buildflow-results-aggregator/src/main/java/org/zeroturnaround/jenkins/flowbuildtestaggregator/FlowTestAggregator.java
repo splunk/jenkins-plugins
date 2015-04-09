@@ -55,6 +55,10 @@ public class FlowTestAggregator extends Recorder {
 		try {
 			for (JobInvocation jobInvocation : flowRun.getJobsGraph()
 					.vertexSet()) {
+				// retried job always has a better run
+				if(flowRun.getRetriedjobs().contains(jobInvocation))
+					continue;
+				
 				// if (!jobInvocation.getClass().getName().contains("Start")) {
 				AggregatedTestResultAction testResult1 = jobInvocation
 						.getBuild().getAction(FlowTestResults.class);

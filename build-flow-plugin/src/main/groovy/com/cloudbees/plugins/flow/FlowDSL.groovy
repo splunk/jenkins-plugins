@@ -415,8 +415,10 @@ public class FlowDelegate {
 			name = job.getName() + " - " + ((AbstractBuild<?, ?>) job.getBuild())
 							.getBuildVariables().get("aggregate_report_name");
 
-			if (attempts != 0)
+			if (attempts != 0){
 				println(HyperlinkNote.encodeTo('/'+ job.getBuild().getUrl(), name) + " did not have any test results. Possible abort or infrastructure issues. Retry #" + i)
+				flowRun.addRetriedjob(job)
+			}
 			else
 				println(HyperlinkNote.encodeTo('/'+ job.getBuild().getUrl(), name) + " did not have any test results. Possible abort or infrastructure issues. Abort..")
 		}
